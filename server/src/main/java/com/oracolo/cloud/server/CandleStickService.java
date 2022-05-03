@@ -2,6 +2,8 @@ package com.oracolo.cloud.server;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,6 +12,7 @@ import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -34,15 +37,15 @@ public class CandleStickService {
 	int candlestickTimeWindowSeconds;
 
 	public List<CandleStick> getCandlesticksByIsin(String isin) {
-		Instant currentMinute = Instant.from(LocalDateTime.now().withNano(0));
+		Instant currentMinute = currentMinuteInstant();
 		Instant candlestickWindowAgo = Instant.from(currentMinute.minusSeconds(candlestickTimeWindowSeconds));
 		return CandleStick.findByIsinAndRange(isin, currentMinute, candlestickWindowAgo);
 	}
 
 	@Scheduled(every = "5s", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
-	void grindData() {
-		LocalDateTime now = LocalDateTime.now();
-		Instant closeTimestamp = Instant.from(now.withNano(0));
+	@Transactional
+	public void grindData() {
+		Instant closeTimestamp = currentMinuteInstant();
 		Instant openTimestamp = closeTimestamp.minusSeconds(MINUTE_IN_SECONDS);
 		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
 		Map<String, Instrument> isinCache = new HashMap<>();
@@ -88,6 +91,10 @@ public class CandleStickService {
 		candleStick.setOpenTimestamp(openTimestamp);
 		candleStick.setCloseTimestamp(closeTimestamp);
 		CandleStick.updateFully(candleStick);
+	}
+
+	private static Instant currentMinuteInstant(){
+		return  ZonedDateTime.ofInstant(Instant.now(), ZoneOffset.UTC).withSecond(0).withNano(0).toInstant();
 	}
 
 }

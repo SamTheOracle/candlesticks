@@ -16,9 +16,15 @@ import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
+import lombok.*;
 
 @Entity
 @Table(name = "candlesticks")
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
+@Builder
+@Getter
+@Setter
 public class CandleStick extends PanacheEntity {
 
 	@ManyToOne
@@ -48,67 +54,36 @@ public class CandleStick extends PanacheEntity {
 	}
 
 	public static List<CandleStick> findByIsinAndRange(String isin, Instant from, Instant to) {
-		return list("isin = ?1 and openTimestamp >= ?2 and openTimestamp <= ?3", isin, from, to);
+		return list("instrument.isin = ?1 and openTimestamp >= ?2 and closeTimestamp <= ?3", isin, from, to);
 	}
 
 	public static Optional<CandleStick> findByOpenTimestamp(Instant openTimestamp) {
 		return find("openTimestamp",openTimestamp).singleResultOptional();
 	}
 
-	public Instrument getInstrument() {
-		return instrument;
+	@Override
+	public boolean equals(Object o) {
+		if (this == o)
+			return true;
+		if (!(o instanceof CandleStick))
+			return false;
+
+		CandleStick that = (CandleStick) o;
+
+		return id.equals(that.id);
 	}
 
-	public void setInstrument(Instrument instrument) {
-		this.instrument = instrument;
+	@Override
+	public String toString() {
+		return "CandleStick{" +
+				"instrument=" + instrument +
+				", openTimestamp=" + openTimestamp +
+				", closeTimestamp=" + closeTimestamp +
+				", openPrice=" + openPrice +
+				", closePrice=" + closePrice +
+				", highPrice=" + highPrice +
+				", lowPrice=" + lowPrice +
+				", id=" + id +
+				'}';
 	}
-
-	public Instant getOpenTimestamp() {
-		return openTimestamp;
-	}
-
-	public void setOpenTimestamp(Instant openTimestamp) {
-		this.openTimestamp = openTimestamp;
-	}
-
-	public Instant getCloseTimestamp() {
-		return closeTimestamp;
-	}
-
-	public void setCloseTimestamp(Instant closeTimestamp) {
-		this.closeTimestamp = closeTimestamp;
-	}
-
-	public Double getOpenPrice() {
-		return openPrice;
-	}
-
-	public void setOpenPrice(Double openPrice) {
-		this.openPrice = openPrice;
-	}
-
-	public Double getClosePrice() {
-		return closePrice;
-	}
-
-	public void setClosePrice(Double closePrice) {
-		this.closePrice = closePrice;
-	}
-
-	public Double getHighPrice() {
-		return highPrice;
-	}
-
-	public void setHighPrice(Double highPrice) {
-		this.highPrice = highPrice;
-	}
-
-	public Double getLowPrice() {
-		return lowPrice;
-	}
-
-	public void setLowPrice(Double lowPrice) {
-		this.lowPrice = lowPrice;
-	}
-
 }

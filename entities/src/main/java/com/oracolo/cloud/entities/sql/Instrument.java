@@ -10,9 +10,15 @@ import javax.persistence.Id;
 import javax.persistence.Table;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import lombok.*;
 
 @Entity
 @Table(name = "instruments")
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
+@Builder
+@Getter
+@Setter
 public class Instrument extends PanacheEntityBase {
 
 	@Id
@@ -24,31 +30,6 @@ public class Instrument extends PanacheEntityBase {
 
 	@Column(name = "description")
 	private String description;
-
-
-	public String getIsin() {
-		return isin;
-	}
-
-	public void setIsin(String isin) {
-		this.isin = isin;
-	}
-
-	public Instant getTimestamp() {
-		return timestamp;
-	}
-
-	public void setTimestamp(Instant timestamp) {
-		this.timestamp = timestamp;
-	}
-
-	public String getDescription() {
-		return description;
-	}
-
-	public void setDescription(String description) {
-		this.description = description;
-	}
 
 	@Override
 	public boolean equals(Object o) {
@@ -67,5 +48,12 @@ public class Instrument extends PanacheEntityBase {
 		return isin.hashCode();
 	}
 
-
+	@Override
+	public String toString() {
+		return "Instrument{" +
+				"isin='" + isin + '\'' +
+				", timestamp=" + timestamp +
+				", description='" + description + '\'' +
+				'}';
+	}
 }

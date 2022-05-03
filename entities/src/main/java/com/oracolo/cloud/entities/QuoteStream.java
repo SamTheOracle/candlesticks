@@ -8,80 +8,49 @@ import com.oracolo.cloud.events.CandlestickQuote;
 
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
+import lombok.*;
 
 @MongoEntity(collection = "quote_data")
+@NoArgsConstructor(access = AccessLevel.PUBLIC)
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
+@Builder
+@Getter
+@Setter
 public class QuoteStream extends PanacheMongoEntity implements CandlestickQuote {
-	private String isin;
-	private double price;
-	private String type;
-	private long timestamp;
+    private String isin;
+    private double price;
+    private String type;
+    private long timestamp;
 
-	public static List<QuoteStream> findQuotesInRange(long from, long to) {
-		return list("timestamp >=?1 and timestamp <= ?2",from, to);
-	}
+    public static List<QuoteStream> findQuotesInRange(long from, long to) {
+        return list("timestamp >=?1 and timestamp <= ?2", from, to);
+    }
 
-	public String getIsin() {
-		return isin;
-	}
+    public static List<QuoteStream> findQuotasByIsinInRange(Set<String> isins, long from, long now) {
+        return list("isin in ?1 and timestamp >= ?2 and timestamp <= ?3", isins, from, now);
+    }
 
-	public double getPrice() {
-		return price;
-	}
+    public static QuoteStream from(CandlestickQuote candlestickQuote) {
+        return QuoteStream.builder()
+                .isin(candlestickQuote.isin())
+                .price(candlestickQuote.price())
+                .timestamp(Instant.now().toEpochMilli())
+                .type(candlestickQuote.type())
+                .build();
+    }
 
-	public long getTimestamp() {
-		return timestamp;
-	}
+    @Override
+    public String isin() {
+        return isin;
+    }
 
-	public String getType() {
-		return type;
-	}
+    @Override
+    public double price() {
+        return price;
+    }
 
-	public void setIsin(String isin) {
-		this.isin = isin;
-	}
-
-	public void setPrice(double price) {
-		this.price = price;
-	}
-
-	public void setType(String type) {
-		this.type = type;
-	}
-
-	public void setTimestamp(long timestamp) {
-		this.timestamp = timestamp;
-	}
-
-	public QuoteStream(String isin, double price, String type, long timestamp) {
-		this.isin = isin;
-		this.price = price;
-		this.type = type;
-		this.timestamp = timestamp;
-	}
-
-	public QuoteStream() {
-	}
-
-	public static List<QuoteStream> findQuotasByIsinInRange(Set<String> isins, long from, long now) {
-		return list("isin in ?1 and timestamp >= ?2 and timestamp <= ?3", isins, from, now);
-	}
-
-	public static QuoteStream from(CandlestickQuote candlestickQuote) {
-		return new QuoteStream(candlestickQuote.isin(), candlestickQuote.price(), candlestickQuote.type(), candlestickQuote.timestamp());
-	}
-
-	@Override
-	public String isin() {
-		return isin;
-	}
-
-	@Override
-	public double price() {
-		return price;
-	}
-
-	@Override
-	public long timestamp() {
-		return timestamp;
-	}
+    @Override
+    public long timestamp() {
+        return timestamp;
+    }
 }
