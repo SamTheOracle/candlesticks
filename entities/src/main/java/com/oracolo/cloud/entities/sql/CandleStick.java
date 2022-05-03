@@ -2,6 +2,7 @@ package com.oracolo.cloud.entities.sql;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -48,6 +49,10 @@ public class CandleStick extends PanacheEntity {
 
 	public static List<CandleStick> findByIsinAndRange(String isin, Instant from, Instant to) {
 		return list("isin = ?1 and openTimestamp >= from and openTimestamp <= to");
+	}
+
+	public static Optional<CandleStick> findByOpenTimestamp(Instant openTimestamp) {
+		return find("openTimestamp",openTimestamp).singleResultOptional();
 	}
 
 	public Instrument getInstrument() {
