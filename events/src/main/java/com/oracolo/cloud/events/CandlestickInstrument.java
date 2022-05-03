@@ -23,11 +23,4 @@ public interface CandlestickInstrument {
 	 */
 	String description();
 
-	/**
-	 *
-	 * @return creation timestamp. It defaults to current timestamp in milliseconds
-	 */
-	default long timestamp(){
-		return Instant.now().toEpochMilli();
-	}
 }

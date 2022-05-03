@@ -28,8 +28,4 @@ public class InstrumentEvent implements CandlestickInstrument {
 		return data.description;
 	}
 
-	@Override
-	public long timestamp() {
-		return Instant.now().toEpochMilli();
-	}
 }

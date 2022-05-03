@@ -58,7 +58,6 @@ class StreamHandlerImpl implements StreamHandler {
 				oneMinuteAgo.toEpochMilli(), now.toEpochMilli());
 		return instrumentStreams.stream().map(
 				instrumentStream -> new InstrumentWithQuote(instrumentStream.getIsin(), instrumentStream.getDescription(),
-						instrumentStream.getTimestamp(),
 						quotes.stream().filter(quote -> quote.isin().equals(instrumentStream.getIsin())).collect(
 								Collectors.toUnmodifiableList()))).collect(Collectors.toUnmodifiableList());
 	}

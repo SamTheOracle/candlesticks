@@ -57,10 +57,6 @@ public class InstrumentEventTest implements CandlestickInstrument {
 		return description;
 	}
 
-	@Override
-	public long timestamp() {
-		return timestamp;
-	}
 
 	@Override
 	public String toString() {

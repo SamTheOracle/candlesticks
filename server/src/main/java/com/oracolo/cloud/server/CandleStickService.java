@@ -42,8 +42,8 @@ public class CandleStickService {
 	@Scheduled(every = "5s", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
 	private void grindData() {
 		LocalDateTime now = LocalDateTime.now();
-		Instant currentMinuteAsTimestamp = Instant.from(now.withNano(0));
-		Instant openTimestamp = currentMinuteAsTimestamp.minusSeconds(MINUTE_IN_SECONDS);
+		Instant closeTimestamp = Instant.from(now.withNano(0));
+		Instant openTimestamp = closeTimestamp.minusSeconds(MINUTE_IN_SECONDS);
 		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
 		Map<String, Instrument> isinCache = new HashMap<>();
 		for (QuotedInstrument quote : quotedInstruments) {
@@ -57,34 +57,37 @@ public class CandleStickService {
 				}
 				return instrumentOptional.get();
 			});
-			Optional<CandleStick> candleStickOptional = CandleStick.findByOpenTimestamp(openTimestamp);
-			CandleStick candleStick;
-			if (candleStickOptional.isEmpty()) {
-				candleStick = new CandleStick();
-				candleStick.setInstrument(instrument);
-				candleStick.persist();
-			} else {
-				candleStick = candleStickOptional.get();
-			}
 			List<CandlestickQuote> quotesByIsin = quotedInstruments.stream().filter(q -> q.isin().equals(quote.isin())).flatMap(
 					quotedInstrument -> quotedInstrument.quotes().stream()).collect(Collectors.toUnmodifiableList());
-			double openPrice = quotesByIsin.stream().reduce(
-					(quote1, quote2) -> quote1.timestamp() < quote2.timestamp() ? quote1 : quote2).map(CandlestickQuote::price).orElse(
-					DEFAULT_PRICE);
-			double closePrice = quotesByIsin.stream().reduce(
-					(quote1, quote2) -> quote1.timestamp() > quote2.timestamp() ? quote1 : quote2).map(CandlestickQuote::price).orElse(
-					DEFAULT_PRICE);
-			double highPrice = quotesByIsin.stream().mapToDouble(CandlestickQuote::price).max().orElse(DEFAULT_PRICE);
-			double lowPrice = quotesByIsin.stream().mapToDouble(CandlestickQuote::price).min().orElse(DEFAULT_PRICE);
-			candleStick.setClosePrice(closePrice);
-			candleStick.setOpenPrice(openPrice);
-			candleStick.setHighPrice(highPrice);
-			candleStick.setLowPrice(lowPrice);
-			candleStick.setOpenTimestamp(openTimestamp);
-			candleStick.setCloseTimestamp(currentMinuteAsTimestamp);
-			CandleStick.updateFully(candleStick);
+			handleCandlestick(instrument, openTimestamp, closeTimestamp, quotesByIsin);
 		}
 
+	}
+
+	private void handleCandlestick(Instrument instrument, Instant openTimestamp, Instant closeTimestamp,
+			List<CandlestickQuote> quotesByIsin) {
+		Optional<CandleStick> candleStickOptional = CandleStick.findByOpenTimestamp(openTimestamp);
+		CandleStick candleStick;
+		if (candleStickOptional.isEmpty()) {
+			candleStick = new CandleStick();
+			candleStick.setInstrument(instrument);
+			candleStick.persist();
+		} else {
+			candleStick = candleStickOptional.get();
+		}
+		double openPrice = quotesByIsin.stream().reduce((quote1, quote2) -> quote1.timestamp() < quote2.timestamp() ? quote1 : quote2).map(
+				CandlestickQuote::price).orElse(DEFAULT_PRICE);
+		double closePrice = quotesByIsin.stream().reduce((quote1, quote2) -> quote1.timestamp() > quote2.timestamp() ? quote1 : quote2).map(
+				CandlestickQuote::price).orElse(DEFAULT_PRICE);
+		double highPrice = quotesByIsin.stream().mapToDouble(CandlestickQuote::price).max().orElse(DEFAULT_PRICE);
+		double lowPrice = quotesByIsin.stream().mapToDouble(CandlestickQuote::price).min().orElse(DEFAULT_PRICE);
+		candleStick.setClosePrice(closePrice);
+		candleStick.setOpenPrice(openPrice);
+		candleStick.setHighPrice(highPrice);
+		candleStick.setLowPrice(lowPrice);
+		candleStick.setOpenTimestamp(openTimestamp);
+		candleStick.setCloseTimestamp(closeTimestamp);
+		CandleStick.updateFully(candleStick);
 	}
 
 }

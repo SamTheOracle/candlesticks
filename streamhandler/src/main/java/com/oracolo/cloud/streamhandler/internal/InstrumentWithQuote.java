@@ -8,13 +8,11 @@ import com.oracolo.cloud.streamhandler.QuotedInstrument;
 
 class InstrumentWithQuote implements QuotedInstrument {
 	private final String isin, description;
-	private final long timestamp;
 	private final List<CandlestickQuote> quoteData;
 
-	InstrumentWithQuote(String isin, String description, long timestamp, List<CandlestickQuote> quotes) {
+	InstrumentWithQuote(String isin, String description, List<CandlestickQuote> quotes) {
 		this.isin = isin;
 		this.description = description;
-		this.timestamp = timestamp;
 		this.quoteData = quotes;
 	}
 
@@ -31,11 +29,6 @@ class InstrumentWithQuote implements QuotedInstrument {
 	@Override
 	public String description() {
 		return description;
-	}
-
-	@Override
-	public long timestamp() {
-		return timestamp;
 	}
 
 	@Override
