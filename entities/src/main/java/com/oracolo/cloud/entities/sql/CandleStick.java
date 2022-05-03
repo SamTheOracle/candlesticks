@@ -48,7 +48,7 @@ public class CandleStick extends PanacheEntity {
 	}
 
 	public static List<CandleStick> findByIsinAndRange(String isin, Instant from, Instant to) {
-		return list("isin = ?1 and openTimestamp >= from and openTimestamp <= to");
+		return list("isin = ?1 and openTimestamp >= ?2 and openTimestamp <= ?3", isin, from, to);
 	}
 
 	public static Optional<CandleStick> findByOpenTimestamp(Instant openTimestamp) {

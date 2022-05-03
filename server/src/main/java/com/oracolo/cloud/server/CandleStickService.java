@@ -40,7 +40,7 @@ public class CandleStickService {
 	}
 
 	@Scheduled(every = "5s", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
-	private void grindData() {
+	void grindData() {
 		LocalDateTime now = LocalDateTime.now();
 		Instant closeTimestamp = Instant.from(now.withNano(0));
 		Instant openTimestamp = closeTimestamp.minusSeconds(MINUTE_IN_SECONDS);
