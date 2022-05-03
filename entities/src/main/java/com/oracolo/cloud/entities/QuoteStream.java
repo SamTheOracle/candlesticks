@@ -16,6 +16,10 @@ public class QuoteStream extends PanacheMongoEntity implements CandlestickQuote 
 	private String type;
 	private long timestamp;
 
+	public static List<QuoteStream> findQuotesInRange(long from, long to) {
+		return list("timestamp >=?1 and timestamp <= ?2",from, to);
+	}
+
 	public String getIsin() {
 		return isin;
 	}

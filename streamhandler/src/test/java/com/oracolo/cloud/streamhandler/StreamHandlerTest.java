@@ -29,12 +29,12 @@ import io.quarkus.test.junit.QuarkusTest;
 public class StreamHandlerTest {
 
 	@Inject
-	AsyncStreamHandler asyncStreamHandler;
+	StreamHandler streamHandler;
 
 	@Test
 	@DisplayName("No data should be present")
 	public void noDataShouldBePresent() {
-		Assertions.assertTrue(asyncStreamHandler.fetchStream().isEmpty());
+		Assertions.assertTrue(streamHandler.fetchStream().isEmpty());
 	}
 
 	@Test
@@ -43,9 +43,8 @@ public class StreamHandlerTest {
 		String isin = UUID.randomUUID().toString();
 		String description = "not the best, really";
 		InstrumentEventTest instrumentEventTest = new InstrumentEventTest(isin, description, InstrumentEventType.ADD, Instant.now().toEpochMilli());
-		Future<Void> task = asyncStreamHandler.handleInstrumentEvent(instrumentEventTest);
-		Assertions.assertDoesNotThrow(() -> task.get(10, TimeUnit.SECONDS));
-		List<QuotedInstrument> quotedInstruments = asyncStreamHandler.fetchStream();
+		streamHandler.handleInstrumentEvent(instrumentEventTest);
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
 		Assertions.assertFalse(quotedInstruments.isEmpty());
 		Assertions.assertEquals(1, quotedInstruments.size());
 		Assertions.assertEquals(instrumentEventTest.isin(), quotedInstruments.get(0).isin());
@@ -62,7 +61,7 @@ public class StreamHandlerTest {
 		double price = 12.45;
 		testQuoteCreation(isin, price);
 		Instant oneMinuteLater = now.plusSeconds(60);
-		List<QuotedInstrument> quotedInstruments = asyncStreamHandler.fetchStream();
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
 		Assertions.assertNotNull(quotedInstruments);
 		Assertions.assertFalse(quotedInstruments.isEmpty());
 		Assertions.assertEquals(1, quotedInstruments.size());
@@ -85,7 +84,7 @@ public class StreamHandlerTest {
 		CandlestickInstrument one = testInstrumentCreate(isin1, InstrumentEventType.ADD);
 		String isin2 = UUID.randomUUID().toString();
 		CandlestickInstrument two = testInstrumentCreate(isin2, InstrumentEventType.ADD);
-		List<QuotedInstrument> quotedInstruments = asyncStreamHandler.fetchStream();
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
 		Assertions.assertFalse(quotedInstruments.isEmpty());
 		Assertions.assertEquals(2, quotedInstruments.size());
 		Assertions.assertTrue(quotedInstruments.stream().anyMatch(quotedInstrument -> isin1.equals(quotedInstrument.isin())));
@@ -119,7 +118,7 @@ public class StreamHandlerTest {
 		double price4 = random.nextDouble();
 		testQuoteCreation(isin,price3);
 		testQuoteCreation(isin,price4);
-		List<QuotedInstrument> quotedInstruments = asyncStreamHandler.fetchStream();
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
 		Assertions.assertFalse(quotedInstruments.isEmpty());
 		Assertions.assertEquals(1,quotedInstruments.size());
 		QuotedInstrument quotedInstrument = quotedInstruments.get(0);
@@ -139,15 +138,14 @@ public class StreamHandlerTest {
 
 	private void testQuoteCreation(String isin, double price) {
 		QuoteEventTest quoteEventTest = new QuoteEventTest(isin, price, Instant.now().toEpochMilli());
-		Assertions.assertDoesNotThrow(()->asyncStreamHandler.handleQuoteEvent(quoteEventTest).get());
+		streamHandler.handleQuoteEvent(quoteEventTest);
 	}
 
 	private CandlestickInstrument testInstrumentCreate(String isin, InstrumentEventType type) {
 		InstrumentEventTest instrumentEventTest = new InstrumentEventTest(isin, UUID.randomUUID().toString(), type,
 				Instant.now().toEpochMilli());
-		Future<Void> task = asyncStreamHandler.handleInstrumentEvent(instrumentEventTest);
-		Assertions.assertDoesNotThrow(() -> task.get(10, TimeUnit.SECONDS));
-		List<QuotedInstrument> quotedInstruments = asyncStreamHandler.fetchStream();
+		streamHandler.handleInstrumentEvent(instrumentEventTest);
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
 		if(type==InstrumentEventType.ADD){
 			Assertions.assertFalse(quotedInstruments.isEmpty());
 		}else{
