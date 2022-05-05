@@ -6,6 +6,7 @@ import java.util.stream.Collectors;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import javax.transaction.Transactional;
 
 import org.eclipse.microprofile.context.ManagedExecutor;
 
@@ -26,9 +27,6 @@ class StreamHandlerImpl implements StreamHandler {
 	 * 1 minute in milliseconds
 	 */
 	private static final long MINUTE_IN_MILLIS = 60 * 2 * 1000;
-
-	@Inject
-	ManagedExecutor executor;
 
 	@Override
 	public void handleInstrumentEvent(CandlestickInstrument candlestickInstrument) {
@@ -56,7 +54,7 @@ class StreamHandlerImpl implements StreamHandler {
 		List<QuoteStream> quotes = QuoteStream.findQuotasByIsinInRange(
 				instrumentStreams.stream().map(InstrumentStream::getIsin).collect(Collectors.toUnmodifiableSet()),
 				oneMinuteAgo.toEpochMilli(), now.toEpochMilli());
-		return instrumentStreams.stream().map(
+		return instrumentStreams.parallelStream().map(
 				instrumentStream -> new InstrumentWithQuote(instrumentStream.getIsin(), instrumentStream.getDescription(),
 						quotes.stream().filter(quote -> quote.isin().equals(instrumentStream.getIsin())).collect(
 								Collectors.toUnmodifiableList()))).collect(Collectors.toUnmodifiableList());

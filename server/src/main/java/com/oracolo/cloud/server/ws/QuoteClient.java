@@ -24,9 +24,9 @@ import org.slf4j.LoggerFactory;
 
 import com.oracolo.cloud.events.CandlestickInstrument;
 import com.oracolo.cloud.events.InstrumentEvent;
+import com.oracolo.cloud.events.QuoteEvent;
 import com.oracolo.cloud.streamhandler.StreamHandler;
 
-import io.quarkus.arc.profile.IfBuildProfile;
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import io.quarkus.runtime.Startup;
 import io.vertx.core.json.Json;
@@ -34,7 +34,7 @@ import io.vertx.core.json.Json;
 @ClientEndpoint
 @Startup
 @UnlessBuildProfile(value = "test")
-public class InstrumentClient {
+public class QuoteClient {
 	private final Logger logger = LoggerFactory.getLogger(this.getClass().getSimpleName());
 
 	@Inject
@@ -46,7 +46,7 @@ public class InstrumentClient {
 	@Inject
 	Event<CandlestickInstrument> candlestickInstrumentEvent;
 
-	@ConfigProperty(name = "WEBSOCKET_INSTRUMENT_URI", defaultValue = "ws://localhost:8032/instruments")
+	@ConfigProperty(name = "WEBSOCKET_QUOTE_URI", defaultValue = "ws://localhost:8032/quotes")
 	String connection;
 
 	@ConfigProperty(name = "MAX_CONNECTION_RETRY", defaultValue = "10")
@@ -93,9 +93,8 @@ public class InstrumentClient {
 	public void onMessage(String message) {
 		logger.info("Received {}", message);
 		managedExecutor.submit(() -> {
-			InstrumentEvent instrumentEvent = Json.decodeValue(message,InstrumentEvent.class);
-			streamHandler.handleInstrumentEvent(instrumentEvent);
-			candlestickInstrumentEvent.fire(instrumentEvent);
+			QuoteEvent quoteEvent = Json.decodeValue(message, QuoteEvent.class);
+			streamHandler.handleQuoteEvent(quoteEvent);
 		});
 	}
 }

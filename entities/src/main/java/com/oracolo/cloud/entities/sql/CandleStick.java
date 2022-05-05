@@ -11,12 +11,16 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
 import javax.persistence.Table;
 
 import io.quarkus.hibernate.orm.panache.PanacheEntity;
-import lombok.*;
+import io.quarkus.hibernate.orm.panache.PanacheEntityBase;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "candlesticks")
@@ -25,7 +29,11 @@ import lombok.*;
 @Builder
 @Getter
 @Setter
-public class CandleStick extends PanacheEntity {
+public class CandleStick extends PanacheEntityBase {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Integer id;
 
 	@ManyToOne
 	@JoinColumn(name = "instrument_id")
@@ -57,8 +65,11 @@ public class CandleStick extends PanacheEntity {
 		return list("instrument.isin = ?1 and openTimestamp >= ?2 and closeTimestamp <= ?3", isin, from, to);
 	}
 
-	public static Optional<CandleStick> findByOpenTimestamp(Instant openTimestamp) {
-		return find("openTimestamp",openTimestamp).singleResultOptional();
+	public static Optional<CandleStick> findByOpenTimestamp(Instant openTimestamp, Instrument instrument) {
+		return find("openTimestamp=?1 and instrument=?2", openTimestamp, instrument).singleResultOptional();
+	}
+	public static Optional<CandleStick> findByOpenTimestamp(Instant openTimestamp, String isin) {
+		return find("openTimestamp=?1 and instrument.isin=?2", openTimestamp, isin).singleResultOptional();
 	}
 
 	@Override
@@ -75,15 +86,8 @@ public class CandleStick extends PanacheEntity {
 
 	@Override
 	public String toString() {
-		return "CandleStick{" +
-				"instrument=" + instrument +
-				", openTimestamp=" + openTimestamp +
-				", closeTimestamp=" + closeTimestamp +
-				", openPrice=" + openPrice +
-				", closePrice=" + closePrice +
-				", highPrice=" + highPrice +
-				", lowPrice=" + lowPrice +
-				", id=" + id +
-				'}';
+		return "CandleStick{" + "instrument=" + instrument + ", openTimestamp=" + openTimestamp + ", closeTimestamp=" + closeTimestamp
+				+ ", openPrice=" + openPrice + ", closePrice=" + closePrice + ", highPrice=" + highPrice + ", lowPrice=" + lowPrice
+				+ ", id=" + id + '}';
 	}
 }

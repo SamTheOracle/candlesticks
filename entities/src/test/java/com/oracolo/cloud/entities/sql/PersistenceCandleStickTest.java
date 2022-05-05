@@ -1,14 +1,21 @@
 package com.oracolo.cloud.entities.sql;
 
-import io.quarkus.test.TestTransaction;
-import io.quarkus.test.junit.QuarkusTest;
-import org.junit.jupiter.api.*;
+import static com.oracolo.cloud.entities.CurrentTimeStampUtils.currentMinuteTimestamp;
 
-import java.time.*;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.UUID;
+
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
+import io.quarkus.test.TestTransaction;
+import io.quarkus.test.junit.QuarkusTest;
 
 @QuarkusTest
 @TestMethodOrder(MethodOrderer.Random.class)
@@ -70,12 +77,17 @@ class PersistenceCandleStickTest {
     void findByOpenTimestamp() {
         Instant close = currentMinuteTimestamp();
         Instant open = close.minusSeconds(60);
-        CandleStick candleStick = CandleStick.builder().openTimestamp(open).closeTimestamp(close).build();
+        Instrument instrument = Instrument.builder().isin(UUID.randomUUID().toString()).build();
+        instrument.persist();
+        CandleStick candleStick = CandleStick.builder().instrument(instrument).openTimestamp(open).closeTimestamp(close).build();
         candleStick.persist();
-        Optional<CandleStick> candleStickOptional = CandleStick.findByOpenTimestamp(open);
+        Optional<CandleStick> candleStickOptional = CandleStick.findByOpenTimestamp(open, instrument);
         Assertions.assertTrue(candleStickOptional.isPresent());
         CandleStick persistedCandlestick = candleStickOptional.get();
         assertCandlestick(candleStick, persistedCandlestick);
+        Optional<CandleStick> candleStickOptional2 = CandleStick.findByOpenTimestamp(open,instrument.getIsin());
+        Assertions.assertTrue(candleStickOptional2.isPresent());
+        assertCandlestick(candleStick,candleStickOptional2.get());
 
     }
 
@@ -102,7 +114,7 @@ class PersistenceCandleStickTest {
 
     private static CandleStick testCreate(CandleStick candleStick) {
         candleStick.persist();
-        Optional<CandleStick> candleStickOptional = CandleStick.findByIdOptional(candleStick.id);
+        Optional<CandleStick> candleStickOptional = CandleStick.findByIdOptional(candleStick.getId());
         Assertions.assertTrue(candleStickOptional.isPresent());
         CandleStick persistedCandlestick = candleStickOptional.get();
         Assertions.assertNotNull(persistedCandlestick);
@@ -111,7 +123,7 @@ class PersistenceCandleStickTest {
     }
 
     private static void assertCandlestick(CandleStick first, CandleStick second) {
-        Assertions.assertEquals(first.id, second.id);
+        Assertions.assertEquals(first.getId(), second.getId());
         Assertions.assertEquals(first.getOpenPrice(), second.getOpenPrice());
         Assertions.assertEquals(first.getClosePrice(), second.getClosePrice());
         Assertions.assertEquals(first.getHighPrice(), second.getHighPrice());
@@ -120,8 +132,4 @@ class PersistenceCandleStickTest {
         Assertions.assertEquals(first.getCloseTimestamp(), second.getCloseTimestamp());
     }
 
-    private static Instant currentMinuteTimestamp() {
-        ZonedDateTime instant = ZonedDateTime.ofInstant(Instant.now(), ZoneOffset.UTC);
-        return Assertions.assertDoesNotThrow(() -> Instant.from(instant.withSecond(0).withNano(0)));
-    }
 }
