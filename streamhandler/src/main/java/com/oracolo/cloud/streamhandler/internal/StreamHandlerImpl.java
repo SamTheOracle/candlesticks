@@ -8,8 +8,8 @@ import javax.enterprise.context.ApplicationScoped;
 
 import com.oracolo.cloud.entities.Instrument;
 import com.oracolo.cloud.entities.Quote;
-import com.oracolo.cloud.events.CandlestickInstrument;
-import com.oracolo.cloud.events.CandlestickQuote;
+import com.oracolo.cloud.events.CandleStickInstrument;
+import com.oracolo.cloud.events.CandleStickQuote;
 import com.oracolo.cloud.events.InstrumentEventType;
 import com.oracolo.cloud.streamhandler.QuotedInstrument;
 import com.oracolo.cloud.streamhandler.StreamHandler;
@@ -20,7 +20,7 @@ import com.oracolo.cloud.streamhandler.StreamHandler;
 @ApplicationScoped
 class StreamHandlerImpl implements StreamHandler {
 	@Override
-	public void handleInstrumentEvent(CandlestickInstrument candlestickInstrument) {
+	public void handleInstrumentEvent(CandleStickInstrument candlestickInstrument) {
 		Instant timestamp = Instant.now();
 		if (candlestickInstrument.type() == InstrumentEventType.DELETE) {
 			Instrument.deleteByIsinTimestamp(candlestickInstrument.isin(), timestamp.toEpochMilli());
@@ -31,7 +31,7 @@ class StreamHandlerImpl implements StreamHandler {
 	}
 
 	@Override
-	public void handleQuoteEvent(CandlestickQuote quoteEvent) {
+	public void handleQuoteEvent(CandleStickQuote quoteEvent) {
 		Quote quote = Quote.from(quoteEvent);
 		quote.persist();
 	}

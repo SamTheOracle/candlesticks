@@ -3,7 +3,7 @@ package com.oracolo.cloud.events;
 /**
  * All the information an instrument event can provide
  */
-public interface CandlestickInstrument {
+public interface CandleStickInstrument {
 
 	/**
 	 * @return the identifier of the instrument as {@link String}

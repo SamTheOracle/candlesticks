@@ -2,7 +2,7 @@ package com.oracolo.cloud.server;
 
 import com.oracolo.cloud.entities.CandleStick;
 import com.oracolo.cloud.entities.Instrument;
-import com.oracolo.cloud.events.CandlestickQuote;
+import com.oracolo.cloud.events.CandleStickQuote;
 import com.oracolo.cloud.server.exceptions.InstrumentNotFoundException;
 import com.oracolo.cloud.streamhandler.QuotedInstrument;
 import com.oracolo.cloud.streamhandler.StreamHandler;
@@ -74,10 +74,10 @@ public class CandleStickManager {
 
     private void doGrind(QuotedInstrument quotedInstrument) {
         String isin = quotedInstrument.isin();
-        List<CandlestickQuote> quotes = quotedInstrument.quotes();
-        Map<Instant, List<CandlestickQuote>> quotesByIsinPerMinute = quotes.stream().collect(Collectors.groupingBy(candlestickQuote ->
+        List<CandleStickQuote> quotes = quotedInstrument.quotes();
+        Map<Instant, List<CandleStickQuote>> quotesByIsinPerMinute = quotes.stream().collect(Collectors.groupingBy(candlestickQuote ->
                 instantRoundedAtMinute(Instant.ofEpochMilli(candlestickQuote.timestamp()))));
-        for (Map.Entry<Instant, List<CandlestickQuote>> entry : quotesByIsinPerMinute.entrySet()) {
+        for (Map.Entry<Instant, List<CandleStickQuote>> entry : quotesByIsinPerMinute.entrySet()) {
             Instant open = entry.getKey();
             Instant close = open.plusSeconds(MINUTE_IN_SECONDS);
             Optional<CandleStick> candleStickOptional = CandleStick.findByOpenTimestampAndIsin(open, isin);
@@ -88,17 +88,17 @@ public class CandleStickManager {
             }else{
                 candleStick = candleStickOptional.get();
             }
-            List<CandlestickQuote> quotesByIsin = entry.getValue();
+            List<CandleStickQuote> quotesByIsin = entry.getValue();
             double openPrice = quotesByIsin.stream()
                     .reduce((quote1, quote2) -> quote1.timestamp() < quote2.timestamp() ? quote1 : quote2)
-                    .map(CandlestickQuote::price).orElse(DEFAULT_PRICE);
+                    .map(CandleStickQuote::price).orElse(DEFAULT_PRICE);
             double closePrice = quotesByIsin.stream()
                     .reduce((quote1, quote2) -> quote1.timestamp() > quote2.timestamp() ? quote1 : quote2)
-                    .map(CandlestickQuote::price).orElse(DEFAULT_PRICE);
+                    .map(CandleStickQuote::price).orElse(DEFAULT_PRICE);
             double highPrice = quotesByIsin.stream()
-                    .mapToDouble(CandlestickQuote::price).max().orElse(DEFAULT_PRICE);
+                    .mapToDouble(CandleStickQuote::price).max().orElse(DEFAULT_PRICE);
             double lowPrice = quotesByIsin.stream()
-                    .mapToDouble(CandlestickQuote::price).min().orElse(DEFAULT_PRICE);
+                    .mapToDouble(CandleStickQuote::price).min().orElse(DEFAULT_PRICE);
            candleStick.setHighPrice(highPrice);
            candleStick.setLowPrice(lowPrice);
            candleStick.setOpenPrice(openPrice);

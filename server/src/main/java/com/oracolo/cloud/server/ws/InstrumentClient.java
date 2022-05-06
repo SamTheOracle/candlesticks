@@ -22,11 +22,9 @@ import org.eclipse.microprofile.context.ManagedExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.oracolo.cloud.events.CandlestickInstrument;
 import com.oracolo.cloud.events.InstrumentEvent;
 import com.oracolo.cloud.streamhandler.StreamHandler;
 
-import io.quarkus.arc.profile.IfBuildProfile;
 import io.quarkus.arc.profile.UnlessBuildProfile;
 import io.quarkus.runtime.Startup;
 import io.vertx.core.json.Json;

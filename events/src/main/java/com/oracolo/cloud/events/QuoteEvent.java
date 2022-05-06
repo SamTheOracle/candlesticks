@@ -2,7 +2,7 @@ package com.oracolo.cloud.events;
 
 import java.time.Instant;
 
-public class QuoteEvent implements CandlestickQuote {
+public class QuoteEvent implements CandleStickQuote {
 	public String type;
 	public QuoteData data;
 

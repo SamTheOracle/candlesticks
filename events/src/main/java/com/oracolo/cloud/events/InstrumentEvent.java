@@ -1,8 +1,6 @@
 package com.oracolo.cloud.events;
 
-import java.time.Instant;
-
-public class InstrumentEvent implements CandlestickInstrument {
+public class InstrumentEvent implements CandleStickInstrument {
 
 	public InstrumentEventType type;
 	public InstrumentData data;

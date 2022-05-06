@@ -22,8 +22,6 @@ import org.eclipse.microprofile.context.ManagedExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.oracolo.cloud.events.CandlestickInstrument;
-import com.oracolo.cloud.events.InstrumentEvent;
 import com.oracolo.cloud.events.QuoteEvent;
 import com.oracolo.cloud.streamhandler.StreamHandler;
 

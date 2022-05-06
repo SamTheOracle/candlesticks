@@ -2,10 +2,10 @@ package com.oracolo.cloud.streamhandler.testdata;
 
 import java.util.Objects;
 
-import com.oracolo.cloud.events.CandlestickInstrument;
+import com.oracolo.cloud.events.CandleStickInstrument;
 import com.oracolo.cloud.events.InstrumentEventType;
 
-public class InstrumentEventTest implements CandlestickInstrument {
+public class InstrumentEventTest implements CandleStickInstrument {
 	private final String isin,description;
 	private final InstrumentEventType type;
 	private final long timestamp;

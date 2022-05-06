@@ -10,6 +10,30 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * It represents a <a href="https://en.wikipedia.org/wiki/Candlestick_chart">candlestick</a>, with the following properties:
+ * <ul>
+ *     <li>
+ *         <strong>isin</strong> is the instrument isin
+ *     </li>
+ *     <li> <strong>openTimestamp</strong> the minute this candlestick refers to</li>
+ *     <li>
+ *         <strong>closeTimestamp</strong> the closing minute
+ *     </li>
+ *     <li>
+ *         <strong>closePrice</strong> is the last {@link Quote}'s price received in the minute
+ *     </li>
+ *     <li>
+ *         <strong>openPrice</strong> it is the first {@link Quote}'s price received in the minute
+ *     </li>
+ *     <li>
+ *         <strong>highPrice</strong> it is the {@link Quote} with the highest price in the minute
+ *     </li>
+ *     <li>
+ *         <strong>lowPrice</strong> it is the {@link Quote} with the lowest price in the minute
+ *     </li>
+ * </ul>
+ */
 @MongoEntity(collection = "candlestick_data", database = "streamevents")
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
@@ -22,6 +46,14 @@ public class CandleStick extends PanacheMongoEntity {
     private long openTimestamp, closeTimestamp;
     private double openPrice, closePrice, highPrice, lowPrice;
 
+    /**
+     * Finds {@link CandleStick} for an instrument, in the given range
+     *
+     * @param isin the {@link Instrument} isin
+     * @param from the temporal lower bound limit, inclusive
+     * @param to   the temporal higher bound limit, inclusive
+     * @return a {@link List} of {@link CandleStick}
+     */
     public static List<CandleStick> findByIsinAndRange(String isin, long from, long to) {
         String query = String.format("{'isin':'%s', '$and':[{'openTimestamp':{'$gte':%d}}, {'closeTimestamp':{'$lte':%d}}]}", isin, from, to);
         return list(Document.parse(query));

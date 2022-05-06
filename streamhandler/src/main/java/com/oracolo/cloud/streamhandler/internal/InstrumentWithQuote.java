@@ -2,15 +2,15 @@ package com.oracolo.cloud.streamhandler.internal;
 
 import java.util.List;
 
-import com.oracolo.cloud.events.CandlestickQuote;
+import com.oracolo.cloud.events.CandleStickQuote;
 import com.oracolo.cloud.events.InstrumentEventType;
 import com.oracolo.cloud.streamhandler.QuotedInstrument;
 
 class InstrumentWithQuote implements QuotedInstrument {
 	private final String isin, description;
-	private final List<CandlestickQuote> quoteData;
+	private final List<CandleStickQuote> quoteData;
 
-	InstrumentWithQuote(String isin, String description, List<CandlestickQuote> quotes) {
+	InstrumentWithQuote(String isin, String description, List<CandleStickQuote> quotes) {
 		this.isin = isin;
 		this.description = description;
 		this.quoteData = quotes;
@@ -32,7 +32,7 @@ class InstrumentWithQuote implements QuotedInstrument {
 	}
 
 	@Override
-	public List<CandlestickQuote> quotes() {
+	public List<CandleStickQuote> quotes() {
 		return quoteData;
 	}
 

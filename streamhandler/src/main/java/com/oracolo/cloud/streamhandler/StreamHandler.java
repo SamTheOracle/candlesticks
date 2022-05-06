@@ -2,26 +2,25 @@ package com.oracolo.cloud.streamhandler;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.concurrent.Future;
 
-import com.oracolo.cloud.events.CandlestickInstrument;
-import com.oracolo.cloud.events.CandlestickQuote;
+import com.oracolo.cloud.events.CandleStickInstrument;
+import com.oracolo.cloud.events.CandleStickQuote;
 
 /**
  * Handles stream of data from provider.
  */
 public interface StreamHandler {
 	/**
-	 * Generic, free for all method that handles a {@link CandlestickInstrument} coming from provider.
-	 * @param instrumentEvent an instance of {@link CandlestickInstrument}
+	 * Generic, free for all method that handles a {@link CandleStickInstrument} coming from provider.
+	 * @param instrumentEvent an instance of {@link CandleStickInstrument}
 	 */
-	void handleInstrumentEvent(CandlestickInstrument instrumentEvent);
+	void handleInstrumentEvent(CandleStickInstrument instrumentEvent);
 
 	/**
-	 * Generic, free for all method that handles a {@link CandlestickQuote} coming from provider
-	 * @param quoteEvent an instance of {@link CandlestickQuote}
+	 * Generic, free for all method that handles a {@link CandleStickQuote} coming from provider
+	 * @param quoteEvent an instance of {@link CandleStickQuote}
 	 */
-	void handleQuoteEvent(CandlestickQuote quoteEvent);
+	void handleQuoteEvent(CandleStickQuote quoteEvent);
 
 	/**
 	 * It fetches all data in the given range

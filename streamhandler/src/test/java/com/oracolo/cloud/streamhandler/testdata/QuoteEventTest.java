@@ -1,8 +1,8 @@
 package com.oracolo.cloud.streamhandler.testdata;
 
-import com.oracolo.cloud.events.CandlestickQuote;
+import com.oracolo.cloud.events.CandleStickQuote;
 
-public class QuoteEventTest implements CandlestickQuote {
+public class QuoteEventTest implements CandleStickQuote {
 	private final String isin;
 	private final double price;
 	private final long timestamp;

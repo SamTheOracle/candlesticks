@@ -3,7 +3,7 @@ package com.oracolo.cloud.events;
 /**
  * All the information a quote event can provide
  */
-public interface CandlestickQuote {
+public interface CandleStickQuote {
 	String DEFAULT_QUOTE_TYPE = "quote";
 
 	/**
@@ -13,7 +13,7 @@ public interface CandlestickQuote {
 
 	/**
 	 *
-	 * @return the type of the quote. It defaults to {@link CandlestickQuote#DEFAULT_QUOTE_TYPE}
+	 * @return the type of the quote. It defaults to {@link CandleStickQuote#DEFAULT_QUOTE_TYPE}
 	 */
 	default String type() {
 		return DEFAULT_QUOTE_TYPE;

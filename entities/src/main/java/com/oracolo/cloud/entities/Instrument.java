@@ -5,14 +5,17 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
-import com.oracolo.cloud.events.CandlestickInstrument;
-import com.oracolo.cloud.events.InstrumentEventType;
+import com.oracolo.cloud.events.CandleStickInstrument;
 
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 import lombok.*;
 import org.bson.Document;
 
+/**
+ * An {@link Instrument} is uniquely identified by its <strong>isin</strong>, but if the {@link Instrument} gets deleted the isin
+ * can be reused
+ */
 @MongoEntity(collection = "instrument_data", database = "streamevents")
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
@@ -25,7 +28,7 @@ public class Instrument extends PanacheMongoEntity {
     private long timestamp;
     private String isin;
 
-    public static Instrument from(CandlestickInstrument instrumentEvent) {
+    public static Instrument from(CandleStickInstrument instrumentEvent) {
         String isin = instrumentEvent.isin();
         String description = instrumentEvent.description();
         return Instrument.builder().isin(isin).description(description).timestamp(Instant.now().toEpochMilli()).build();

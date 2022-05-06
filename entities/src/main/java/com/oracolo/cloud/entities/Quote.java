@@ -3,23 +3,25 @@ package com.oracolo.cloud.entities;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
-import com.oracolo.cloud.events.CandlestickQuote;
+import com.oracolo.cloud.events.CandleStickQuote;
 
 import io.quarkus.mongodb.panache.PanacheMongoEntity;
 import io.quarkus.mongodb.panache.common.MongoEntity;
 import lombok.*;
 import org.bson.Document;
 
+/**
+ * A {@link Quote} is the price of a specific {@link Instrument} in a given moment
+ */
 @MongoEntity(collection = "quote_data", database = "streamevents")
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
 @Builder
 @Getter
 @Setter
-public class Quote extends PanacheMongoEntity implements CandlestickQuote {
+public class Quote extends PanacheMongoEntity implements CandleStickQuote {
     private String isin;
     private double price;
     private String type;
@@ -46,7 +48,7 @@ public class Quote extends PanacheMongoEntity implements CandlestickQuote {
         return list(Document.parse(query));
     }
 
-    public static Quote from(CandlestickQuote candlestickQuote) {
+    public static Quote from(CandleStickQuote candlestickQuote) {
         return Quote.builder()
                 .isin(candlestickQuote.isin())
                 .price(candlestickQuote.price())

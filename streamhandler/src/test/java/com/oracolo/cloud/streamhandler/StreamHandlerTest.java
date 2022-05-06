@@ -18,8 +18,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import com.oracolo.cloud.entities.Instrument;
 import com.oracolo.cloud.entities.Quote;
-import com.oracolo.cloud.events.CandlestickInstrument;
-import com.oracolo.cloud.events.CandlestickQuote;
+import com.oracolo.cloud.events.CandleStickInstrument;
+import com.oracolo.cloud.events.CandleStickQuote;
 import com.oracolo.cloud.events.InstrumentEventType;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -62,7 +62,7 @@ public class StreamHandlerTest {
 	public void shouldAddANewQuoteEvent() {
 		String isin = UUID.randomUUID().toString();
 		Instant now = Instant.now();
-		CandlestickInstrument candlestickInstrument = testInstrumentCreate(isin, InstrumentEventType.ADD);
+		CandleStickInstrument candlestickInstrument = testInstrumentCreate(isin, InstrumentEventType.ADD);
 		double price = 12.45;
 		testQuoteCreation(isin, price);
 		Instant oneMinuteLater = now.plusSeconds(60);
@@ -72,7 +72,7 @@ public class StreamHandlerTest {
 		Assertions.assertEquals(1, quotedInstruments.size());
 		QuotedInstrument quotedInstrument = quotedInstruments.get(0);
 		Assertions.assertEquals(candlestickInstrument.isin(), quotedInstrument.isin());
-		List<CandlestickQuote> quotes = quotedInstrument.quotes();
+		List<CandleStickQuote> quotes = quotedInstrument.quotes();
 		Assertions.assertFalse(quotes.isEmpty());
 		Assertions.assertEquals(1, quotes.size());
 		long ts = quotes.get(0).timestamp();
@@ -86,9 +86,9 @@ public class StreamHandlerTest {
 	@DisplayName("Should fetch instruments with no data")
 	public void shouldFetchInstrumentWithNoData() {
 		String isin1 = UUID.randomUUID().toString();
-		CandlestickInstrument one = testInstrumentCreate(isin1, InstrumentEventType.ADD);
+		CandleStickInstrument one = testInstrumentCreate(isin1, InstrumentEventType.ADD);
 		String isin2 = UUID.randomUUID().toString();
-		CandlestickInstrument two = testInstrumentCreate(isin2, InstrumentEventType.ADD);
+		CandleStickInstrument two = testInstrumentCreate(isin2, InstrumentEventType.ADD);
 		Instant now = Instant.now();
 		Instant from = now.minusSeconds(120);
 		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream(from, now);
@@ -126,12 +126,12 @@ public class StreamHandlerTest {
 		testQuoteCreation(isin,price3);
 		testQuoteCreation(isin,price4);
 		Instant now = Instant.now();
-		Instant from = now.minusSeconds(120);
+		Instant from = now.minusSeconds(300);
 		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream(from, now);
 		Assertions.assertFalse(quotedInstruments.isEmpty());
 		Assertions.assertEquals(1,quotedInstruments.size());
 		QuotedInstrument quotedInstrument = quotedInstruments.get(0);
-		List<CandlestickQuote> quotes = quotedInstrument.quotes();
+		List<CandleStickQuote> quotes = quotedInstrument.quotes();
 		Assertions.assertEquals(4, quotes.size());
 	}
 
@@ -148,7 +148,7 @@ public class StreamHandlerTest {
 		streamHandler.handleQuoteEvent(quoteEventTest);
 	}
 
-	private CandlestickInstrument testInstrumentCreate(String isin, InstrumentEventType type) {
+	private CandleStickInstrument testInstrumentCreate(String isin, InstrumentEventType type) {
 		InstrumentEventTest instrumentEventTest = new InstrumentEventTest(isin, UUID.randomUUID().toString(), type,
 				Instant.now().toEpochMilli());
 		streamHandler.handleInstrumentEvent(instrumentEventTest);
