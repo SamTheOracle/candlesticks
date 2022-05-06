@@ -1,105 +1,121 @@
 package com.oracolo.cloud.server;
 
-import static com.oracolo.cloud.entities.CurrentTimeStampUtils.currentMinuteTimestamp;
-
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import com.oracolo.cloud.entities.CandleStick;
+import com.oracolo.cloud.entities.Instrument;
+import com.oracolo.cloud.events.CandlestickQuote;
+import com.oracolo.cloud.server.exceptions.InstrumentNotFoundException;
+import com.oracolo.cloud.streamhandler.QuotedInstrument;
+import com.oracolo.cloud.streamhandler.StreamHandler;
+import io.quarkus.scheduler.Scheduled;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
-import org.eclipse.microprofile.config.inject.ConfigProperty;
-
-import com.oracolo.cloud.entities.sql.CandleStick;
-import com.oracolo.cloud.entities.sql.Instrument;
-import com.oracolo.cloud.events.CandlestickQuote;
-import com.oracolo.cloud.streamhandler.QuotedInstrument;
-import com.oracolo.cloud.streamhandler.StreamHandler;
-
-import io.quarkus.narayana.jta.QuarkusTransaction;
-import io.quarkus.scheduler.Scheduled;
+import static com.oracolo.cloud.entities.CurrentTimeStampUtils.currentMinuteTimestamp;
+import static com.oracolo.cloud.entities.CurrentTimeStampUtils.instantRoundedAtMinute;
 
 @ApplicationScoped
 public class CandleStickManager {
+    private final Logger logger = LoggerFactory.getLogger(this.getClass().getName());
+    public static final int MINUTE_IN_SECONDS = 60;
+    public static final double DEFAULT_PRICE = 0.0;
 
-	public static final int MINUTE_IN_SECONDS = 60;
-	public static final double DEFAULT_PRICE = 0.0;
+    @Inject
+    StreamHandler streamHandler;
 
-	@Inject
-	StreamHandler streamHandler;
+    @ConfigProperty(name = "candlestick.time-window-seconds", defaultValue = "1800")
+    int candlestickTimeWindowSeconds;
 
-	@ConfigProperty(name = "CANDLESTICK_TIME_WINDOW_SECONDS", defaultValue = "300")
-	int candlestickTimeWindowSeconds;
+    @ConfigProperty(name = "candlestick.grind.time-window-seconds", defaultValue = "300")
+    int grindTimeWindow;
 
-	public List<CandleStick> getCandlesticksByIsin(String isin) {
-		Instant currentMinute = currentMinuteTimestamp();
-		Instant candlestickWindowAgo = Instant.from(currentMinute.minusSeconds(candlestickTimeWindowSeconds));
-		List<CandleStick> candleSticks = CandleStick.findByIsinAndRange(isin, candlestickWindowAgo, currentMinute);
-		int timeWindowMinute = candlestickTimeWindowSeconds/60;
-		if(candleSticks.size() < timeWindowMinute){
-			candlestickWindowAgo = candlestickWindowAgo.minusSeconds(candlestickTimeWindowSeconds);
-			candleSticks = CandleStick.findByIsinAndRange(isin, candlestickWindowAgo, currentMinute);
-		}
-		return candleSticks;
-	}
+    public List<CandleStick> getCandlesticksByIsin(String isin) {
+        Optional<Instrument> instrumentOptional = Instrument.findByIsin(isin);
+        if (instrumentOptional.isEmpty()) {
+            throw new InstrumentNotFoundException();
+        }
+        Instant currentMinute = currentMinuteTimestamp();
+        Instant candlestickWindowAgo = Instant.from(currentMinute.minusSeconds(candlestickTimeWindowSeconds));
+        List<CandleStick> candleSticks = CandleStick.findByIsinAndRange(isin, candlestickWindowAgo, currentMinute);
+        int timeWindowMinute = candlestickTimeWindowSeconds / 60;
+        if (candleSticks.size() < timeWindowMinute) {
+            List<Instant> instants = generateTimeWindow(candlestickTimeWindowSeconds);
+            List<Instant> missingInstants = instants.stream()
+                    .filter(instant -> candleSticks.stream().noneMatch(candleStick -> candleStick.getOpenTimestamp() == instant.toEpochMilli()))
+                    .map(instant -> instant.minusSeconds(candlestickTimeWindowSeconds))
+                    .collect(Collectors.toUnmodifiableList());
+            List<CandleStick> missingCandlesticksFromPreviousCandle = missingInstants.stream()
+                    .map(instant -> CandleStick.findByOpenTimestampAndIsin(instant, isin)
+                            .orElse(CandleStick.empty(isin, instant.plusSeconds(candlestickTimeWindowSeconds), instant.plusSeconds(candlestickTimeWindowSeconds).plusSeconds(MINUTE_IN_SECONDS))))
+                    .collect(Collectors.toUnmodifiableList());
+            candleSticks.addAll(missingCandlesticksFromPreviousCandle);
+        }
+        return candleSticks;
+    }
 
-	@Scheduled(every = "{candlestick.grind.period}", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
-	public void grindData() {
-		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
-		Instant closeTimestamp = currentMinuteTimestamp();
-		Instant openTimestamp = closeTimestamp.minusSeconds(MINUTE_IN_SECONDS);
-		Map<String, Instrument> isinCache = new HashMap<>();
-		QuarkusTransaction.run(() -> quotedInstruments.forEach(quote -> handleQuote(quote, openTimestamp, closeTimestamp, isinCache)));
-	}
+    @Scheduled(every = "{candlestick.grind.period}", concurrentExecution = Scheduled.ConcurrentExecution.SKIP)
+    public void grindData() {
+        Instant closeTimestamp = currentMinuteTimestamp();
+        Instant openTimestamp = closeTimestamp.minusSeconds(grindTimeWindow);
+        logger.info("Fetching data for minute: open -> {}, close -> {}", openTimestamp, closeTimestamp);
+        List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream(openTimestamp, closeTimestamp);
+        quotedInstruments.forEach(this::doGrind);
+    }
 
-	private void handleQuote(QuotedInstrument quote, Instant openTimestamp, Instant closeTimestamp, Map<String, Instrument> isinCache) {
-		Instrument instrument = isinCache.computeIfAbsent(quote.isin(), isin -> {
-			Optional<Instrument> instrumentOptional = Instrument.findByIdOptional(isin);
-			if (instrumentOptional.isEmpty()) {
-				Instrument instr = new Instrument();
-				instr.setIsin(quote.isin());
-				instr.setTimestamp(Instant.now());
-				instr.setDescription(quote.description());
-				instr.persist();
-				return instr;
-			}
-			return instrumentOptional.get();
-		});
-		List<CandlestickQuote> quotesByIsin = quote.quotes();
-		handleCandlestick(instrument, openTimestamp, closeTimestamp, quotesByIsin);
-	}
 
-	private void handleCandlestick(Instrument instrument, Instant openTimestamp, Instant closeTimestamp,
-			List<CandlestickQuote> quotesByIsin) {
-		Optional<CandleStick> candleStickOptional = CandleStick.findByOpenTimestamp(openTimestamp, instrument);
-		CandleStick candleStick;
-		if (candleStickOptional.isEmpty()) {
-			candleStick = CandleStick.builder().instrument(instrument).closeTimestamp(closeTimestamp)
-					.openTimestamp(openTimestamp)
-					.closePrice(0.0)
-					.highPrice(0.0)
-					.lowPrice(0.0)
-					.openPrice(0.0)
-					.build();
-		} else {
-			candleStick = candleStickOptional.get();
-		}
-		double openPrice = quotesByIsin.stream().reduce((quote1, quote2) -> quote1.timestamp() < quote2.timestamp() ? quote1 : quote2).map(
-				CandlestickQuote::price).orElse(DEFAULT_PRICE);
-		double closePrice = quotesByIsin.stream().reduce((quote1, quote2) -> quote1.timestamp() > quote2.timestamp() ? quote1 : quote2).map(
-				CandlestickQuote::price).orElse(DEFAULT_PRICE);
-		double highPrice = quotesByIsin.stream().mapToDouble(CandlestickQuote::price).max().orElse(DEFAULT_PRICE);
-		double lowPrice = quotesByIsin.stream().mapToDouble(CandlestickQuote::price).min().orElse(DEFAULT_PRICE);
-		candleStick.setClosePrice(closePrice);
-		candleStick.setOpenPrice(openPrice);
-		candleStick.setHighPrice(highPrice);
-		candleStick.setLowPrice(lowPrice);
-		candleStick.setOpenTimestamp(openTimestamp);
-		candleStick.setCloseTimestamp(closeTimestamp);
-		CandleStick.updateFully(candleStick);
-	}
+    private void doGrind(QuotedInstrument quotedInstrument) {
+        String isin = quotedInstrument.isin();
+        List<CandlestickQuote> quotes = quotedInstrument.quotes();
+        Map<Instant, List<CandlestickQuote>> quotesByIsinPerMinute = quotes.stream().collect(Collectors.groupingBy(candlestickQuote ->
+                instantRoundedAtMinute(Instant.ofEpochMilli(candlestickQuote.timestamp()))));
+        for (Map.Entry<Instant, List<CandlestickQuote>> entry : quotesByIsinPerMinute.entrySet()) {
+            Instant open = entry.getKey();
+            Instant close = open.plusSeconds(MINUTE_IN_SECONDS);
+            Optional<CandleStick> candleStickOptional = CandleStick.findByOpenTimestampAndIsin(open, isin);
+            CandleStick candleStick;
+            if(candleStickOptional.isEmpty()){
+                candleStick = CandleStick.empty(isin,open,close);
+                candleStick.persist();
+            }else{
+                candleStick = candleStickOptional.get();
+            }
+            List<CandlestickQuote> quotesByIsin = entry.getValue();
+            double openPrice = quotesByIsin.stream()
+                    .reduce((quote1, quote2) -> quote1.timestamp() < quote2.timestamp() ? quote1 : quote2)
+                    .map(CandlestickQuote::price).orElse(DEFAULT_PRICE);
+            double closePrice = quotesByIsin.stream()
+                    .reduce((quote1, quote2) -> quote1.timestamp() > quote2.timestamp() ? quote1 : quote2)
+                    .map(CandlestickQuote::price).orElse(DEFAULT_PRICE);
+            double highPrice = quotesByIsin.stream()
+                    .mapToDouble(CandlestickQuote::price).max().orElse(DEFAULT_PRICE);
+            double lowPrice = quotesByIsin.stream()
+                    .mapToDouble(CandlestickQuote::price).min().orElse(DEFAULT_PRICE);
+           candleStick.setHighPrice(highPrice);
+           candleStick.setLowPrice(lowPrice);
+           candleStick.setOpenPrice(openPrice);
+           candleStick.setClosePrice(closePrice);
+           candleStick.update();
+        }
+
+    }
+
+    private static List<Instant> generateTimeWindow(int timeWindowInMinutes) {
+        Instant current = currentMinuteTimestamp();
+        Instant windowAgo = current.minusSeconds(timeWindowInMinutes);
+        List<Instant> instants = new ArrayList<>();
+        for (int step = 0; step < timeWindowInMinutes / 60; step++) {
+            instants.add(windowAgo.plusSeconds((long) MINUTE_IN_SECONDS * step));
+        }
+        return instants;
+    }
 
 }

@@ -1,4 +1,4 @@
-package com.oracolo.cloud.streamhandler;
+package com.oracolo.cloud.streamhandler.testdata;
 
 import com.oracolo.cloud.events.CandlestickQuote;
 

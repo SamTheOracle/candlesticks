@@ -1,6 +1,5 @@
-package com.oracolo.cloud.streamhandler;
+package com.oracolo.cloud.streamhandler.testdata;
 
-import java.time.Instant;
 import java.util.Objects;
 
 import com.oracolo.cloud.events.CandlestickInstrument;

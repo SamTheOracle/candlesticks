@@ -44,7 +44,7 @@ public class InstrumentClient {
 	ManagedExecutor managedExecutor;
 
 	@Inject
-	Event<CandlestickInstrument> candlestickInstrumentEvent;
+	Event<CloseReason> closeConnectionEvent;
 
 	@ConfigProperty(name = "WEBSOCKET_INSTRUMENT_URI", defaultValue = "ws://localhost:8032/instruments")
 	String connection;
@@ -76,26 +76,26 @@ public class InstrumentClient {
 
 	@OnOpen
 	public void onOpen(Session session) {
-		logger.info("Session {} open!", session.getId());
+		logger.debug("Session {} open!", session.getId());
 	}
 
 	@OnClose
 	public void onClose(Session session, CloseReason closeReason) {
-		logger.info("Session {} closed because of {}", session.getId(), closeReason);
+		logger.debug("Session {} closed because of {}", session.getId(), closeReason);
+		closeConnectionEvent.fire(closeReason);
 	}
 
 	@OnError
 	public void onError(Session session, Throwable t) {
-		logger.info("Error for session {} because of {}", session.getId(), t.getMessage());
+		logger.error("Error for session {} because of {}", session.getId(), t.getMessage());
 	}
 
 	@OnMessage
 	public void onMessage(String message) {
-		logger.info("Received {}", message);
+		logger.debug("Received {}", message);
 		managedExecutor.submit(() -> {
 			InstrumentEvent instrumentEvent = Json.decodeValue(message,InstrumentEvent.class);
 			streamHandler.handleInstrumentEvent(instrumentEvent);
-			candlestickInstrumentEvent.fire(instrumentEvent);
 		});
 	}
 }

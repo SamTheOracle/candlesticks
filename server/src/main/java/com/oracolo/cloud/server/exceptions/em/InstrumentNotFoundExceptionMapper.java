@@ -15,6 +15,6 @@ import com.oracolo.cloud.server.exceptions.InstrumentNotFoundException;
 public class InstrumentNotFoundExceptionMapper implements ExceptionMapper<InstrumentNotFoundException> {
 	@Override
 	public Response toResponse(InstrumentNotFoundException exception) {
-		return Response.status(Response.Status.NOT_FOUND).entity(new ErrorDto(ErrorCode.INSTRUMENT_NOT_FOUND,exception.getMessage())).build();
+		return Response.status(Response.Status.NOT_FOUND).entity(new ErrorDto(ErrorCode.INSTRUMENT_NOT_FOUND.reason())).build();
 	}
 }

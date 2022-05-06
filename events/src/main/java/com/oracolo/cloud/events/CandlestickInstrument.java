@@ -1,7 +1,5 @@
 package com.oracolo.cloud.events;
 
-import java.time.Instant;
-
 /**
  * All the information an instrument event can provide
  */

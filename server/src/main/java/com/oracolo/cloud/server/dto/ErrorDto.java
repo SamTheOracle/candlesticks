@@ -4,17 +4,17 @@ import com.oracolo.cloud.server.exceptions.ErrorCode;
 
 public class ErrorDto {
 
-	public String message;
 
-	public ErrorCode code;
+	public String reason;
 
-	public ErrorDto(ErrorCode code, String message) {
-		this.message = message;
-		this.code = code;
+	public ErrorDto(String reason) {
+		this.reason = reason;
 	}
 
 	@Override
 	public String toString() {
-		return "ErrorDto{" + "message='" + message + '\'' + ", code=" + code + '}';
+		return "ErrorDto{" +
+				"reason=" + reason +
+				'}';
 	}
 }

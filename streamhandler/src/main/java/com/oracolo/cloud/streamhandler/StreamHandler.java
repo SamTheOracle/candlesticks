@@ -1,5 +1,6 @@
 package com.oracolo.cloud.streamhandler;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -23,8 +24,8 @@ public interface StreamHandler {
 	void handleQuoteEvent(CandlestickQuote quoteEvent);
 
 	/**
-	 * It fetches all data in a minute time-window
-	 * @return an instance of {@link QuotedInstrument} in an immutable {@link List}, potentially empty
+	 * It fetches all data in the given range
+	 * @return an instance of {@link QuotedInstrument} in an immutable {@link List}. It could be empty or has instruments with no quote
 	 */
-	List<QuotedInstrument> fetchStream();
+	List<QuotedInstrument> fetchStream(Instant from, Instant to);
 }

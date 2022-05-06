@@ -44,7 +44,7 @@ public class QuoteClient {
 	ManagedExecutor managedExecutor;
 
 	@Inject
-	Event<CandlestickInstrument> candlestickInstrumentEvent;
+	Event<CloseReason> closeConnectionEvent;
 
 	@ConfigProperty(name = "WEBSOCKET_QUOTE_URI", defaultValue = "ws://localhost:8032/quotes")
 	String connection;
@@ -82,16 +82,17 @@ public class QuoteClient {
 	@OnClose
 	public void onClose(Session session, CloseReason closeReason) {
 		logger.info("Session {} closed because of {}", session.getId(), closeReason);
+		closeConnectionEvent.fire(closeReason);
 	}
 
 	@OnError
 	public void onError(Session session, Throwable t) {
-		logger.info("Error for session {} because of {}", session.getId(), t.getMessage());
+		logger.debug("Error for session {} because of {}", session.getId(), t.getMessage());
 	}
 
 	@OnMessage
 	public void onMessage(String message) {
-		logger.info("Received {}", message);
+		logger.debug("Received {}", message);
 		managedExecutor.submit(() -> {
 			QuoteEvent quoteEvent = Json.decodeValue(message, QuoteEvent.class);
 			streamHandler.handleQuoteEvent(quoteEvent);

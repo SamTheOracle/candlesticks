@@ -4,11 +4,11 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Random;
 import java.util.UUID;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import javax.inject.Inject;
 
+import com.oracolo.cloud.streamhandler.testdata.InstrumentEventTest;
+import com.oracolo.cloud.streamhandler.testdata.QuoteEventTest;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -16,8 +16,8 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import com.oracolo.cloud.entities.InstrumentStream;
-import com.oracolo.cloud.entities.QuoteStream;
+import com.oracolo.cloud.entities.Instrument;
+import com.oracolo.cloud.entities.Quote;
 import com.oracolo.cloud.events.CandlestickInstrument;
 import com.oracolo.cloud.events.CandlestickQuote;
 import com.oracolo.cloud.events.InstrumentEventType;
@@ -34,17 +34,22 @@ public class StreamHandlerTest {
 	@Test
 	@DisplayName("No data should be present")
 	public void noDataShouldBePresent() {
-		Assertions.assertTrue(streamHandler.fetchStream().isEmpty());
+		Instant now = Instant.now();
+		Instant from = now.minusSeconds(120);
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream(now, from);
+		Assertions.assertTrue(quotedInstruments.isEmpty());
 	}
 
 	@Test
 	@DisplayName("Should add a new instrument event")
 	public void shouldAddNewInstrument() {
+		Instant now = Instant.now();
 		String isin = UUID.randomUUID().toString();
 		String description = "not the best, really";
 		InstrumentEventTest instrumentEventTest = new InstrumentEventTest(isin, description, InstrumentEventType.ADD, Instant.now().toEpochMilli());
 		streamHandler.handleInstrumentEvent(instrumentEventTest);
-		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
+		Instant from = now.minusSeconds(120);
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream(from, now);
 		Assertions.assertFalse(quotedInstruments.isEmpty());
 		Assertions.assertEquals(1, quotedInstruments.size());
 		Assertions.assertEquals(instrumentEventTest.isin(), quotedInstruments.get(0).isin());
@@ -56,12 +61,12 @@ public class StreamHandlerTest {
 	@DisplayName("Should add a new quote event")
 	public void shouldAddANewQuoteEvent() {
 		String isin = UUID.randomUUID().toString();
-		CandlestickInstrument candlestickInstrument = testInstrumentCreate(isin, InstrumentEventType.ADD);
 		Instant now = Instant.now();
+		CandlestickInstrument candlestickInstrument = testInstrumentCreate(isin, InstrumentEventType.ADD);
 		double price = 12.45;
 		testQuoteCreation(isin, price);
 		Instant oneMinuteLater = now.plusSeconds(60);
-		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream(now,oneMinuteLater);
 		Assertions.assertNotNull(quotedInstruments);
 		Assertions.assertFalse(quotedInstruments.isEmpty());
 		Assertions.assertEquals(1, quotedInstruments.size());
@@ -84,7 +89,9 @@ public class StreamHandlerTest {
 		CandlestickInstrument one = testInstrumentCreate(isin1, InstrumentEventType.ADD);
 		String isin2 = UUID.randomUUID().toString();
 		CandlestickInstrument two = testInstrumentCreate(isin2, InstrumentEventType.ADD);
-		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
+		Instant now = Instant.now();
+		Instant from = now.minusSeconds(120);
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream(from, now);
 		Assertions.assertFalse(quotedInstruments.isEmpty());
 		Assertions.assertEquals(2, quotedInstruments.size());
 		Assertions.assertTrue(quotedInstruments.stream().anyMatch(quotedInstrument -> isin1.equals(quotedInstrument.isin())));
@@ -118,22 +125,22 @@ public class StreamHandlerTest {
 		double price4 = random.nextDouble();
 		testQuoteCreation(isin,price3);
 		testQuoteCreation(isin,price4);
-		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
+		Instant now = Instant.now();
+		Instant from = now.minusSeconds(120);
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream(from, now);
 		Assertions.assertFalse(quotedInstruments.isEmpty());
 		Assertions.assertEquals(1,quotedInstruments.size());
 		QuotedInstrument quotedInstrument = quotedInstruments.get(0);
 		List<CandlestickQuote> quotes = quotedInstrument.quotes();
-		Assertions.assertEquals(2, quotes.size());
-		Assertions.assertTrue(quotes.stream().allMatch(candlestickQuote -> candlestickQuote.price()!=price1 && candlestickQuote.price()!=price2));
-		Assertions.assertTrue(quotes.stream().allMatch(candlestickQuote -> candlestickQuote.price()==price3 || candlestickQuote.price()==price4));
+		Assertions.assertEquals(4, quotes.size());
 	}
 
 	@BeforeEach
 	public void shouldDelete() {
-		InstrumentStream.deleteAll();
-		QuoteStream.deleteAll();
-		Assertions.assertTrue(QuoteStream.listAll().isEmpty());
-		Assertions.assertTrue(InstrumentStream.listAll().isEmpty());
+		Instrument.deleteAll();
+		Quote.deleteAll();
+		Assertions.assertTrue(Quote.listAll().isEmpty());
+		Assertions.assertTrue(Instrument.listAll().isEmpty());
 	}
 
 	private void testQuoteCreation(String isin, double price) {
@@ -145,7 +152,9 @@ public class StreamHandlerTest {
 		InstrumentEventTest instrumentEventTest = new InstrumentEventTest(isin, UUID.randomUUID().toString(), type,
 				Instant.now().toEpochMilli());
 		streamHandler.handleInstrumentEvent(instrumentEventTest);
-		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream();
+		Instant now = Instant.now();
+		Instant from = now.minusSeconds(120);
+		List<QuotedInstrument> quotedInstruments = streamHandler.fetchStream(from, now);
 		if(type==InstrumentEventType.ADD){
 			Assertions.assertFalse(quotedInstruments.isEmpty());
 		}else{

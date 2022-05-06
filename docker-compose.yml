@@ -1,7 +1,37 @@
-java:
-  image: openjdk:11
-  volumes:
-  - ./:/app 
-  command: bash -c "cd /app && java -jar partner-service-1.0.1-all.jar --port=8032"
-  ports:
-    - 8032:8032
+version: '3.8'
+
+services:
+  java:
+    image: openjdk:11
+    volumes:
+      - ./:/app
+    command: bash -c "cd /app && java -jar partner-service-1.0.1-all.jar --port=8032"
+    ports:
+      - "8032:8032"
+  mongo:
+    image: mongo
+    ports:
+      - "27020:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=changeit
+      - MONGO_INITDB_DATABASE=streamevents
+    volumes:
+      - candlestick_data:/data/db
+  candlesticks:
+    image: oracolo/candlesticks
+    ports:
+      - "9000:8080"
+      - "5005:5005"
+    environment:
+      - MONGO_HOST=mongo
+      - MONGO_USER=root
+      - MONGO_PASSWORD=changeit
+      - MONGO_PORT=27017
+      - WEBSOCKET_INSTRUMENT_URI=ws://java:8032/instruments
+      - WEBSOCKET_QUOTE_URI=ws://java:8032/quotes
+    depends_on:
+      - java
+      - mongo
+volumes:
+  candlestick_data:
