@@ -191,5 +191,5 @@ It only streams prices for available instruments (beware out of order messages).
 ## Future Development Discussion
 The following questions will give you a hint on what to think about for the code review interview.
 
-- How would you change the system to provide scaling capabilities to 50.000 (or more) available instruments, each streaming quotes between once per second and every few seconds?
-- How could this system be build in a way that supports failover capabilities so that multiple instances of the system could run simultaneously?
+- How would you change the system to provide scaling capabilities to 50.000 (or more) available instruments, each streaming quotes between once per second and every few seconds? I would use redis to handle the big writes. The periodic task would fetch the data from redis and then persist the candlesticks that are what interests the most
+- How could this system be build in a way that supports failover capabilities so that multiple instances of the system could run simultaneously? replicate the app and then load balancing on top of it? each instance has its database, but how big could it be?
